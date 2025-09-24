@@ -1,0 +1,879 @@
+{
+  "info": {
+    "name": "FHIR Patient Portal API (RBAC) — Complete",
+    "_postman_id": "f7cf71c6-7d84-4a2f-9a4f-ppp-rbac",
+    "description": "Postman collection for the FHIR Patient Portal with RBAC. Set {{baseUrl}} and {{access_token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000/api" },
+    { "key": "access_token", "value": "" },
+    { "key": "patient_id", "value": "1" },
+    { "key": "observation_id", "value": "1" },
+    { "key": "appointment_id", "value": "1" },
+    { "key": "message_id", "value": "msg-123" },
+    { "key": "export_format", "value": "pdf" },
+    { "key": "practitioner", "value": "dr.smith@example.com" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Obtain Token)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin@example.com\",\n  \"password\": \"ChangeMe123!\"\n}"
+            },
+            "description": "Returns access/refresh."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/refresh/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"<paste-refresh-token>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me (Current User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/auth/me/"
+          }
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user1@example.com\",\n  \"password\": \"ChangeMe123!\",\n  \"first_name\": \"User\",\n  \"last_name\": \"One\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Admin / Roles",
+      "item": [
+        {
+          "name": "Roles - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/"
+          }
+        },
+        {
+          "name": "Roles - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"analyst\",\n  \"description\": \"Analytics read/create\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Roles - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/1/"
+          }
+        },
+        {
+          "name": "Roles - Update (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/1/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"analyst\",\n  \"description\": \"Analytics role updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Roles - Partial Update (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/1/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Patch description\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Roles - Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/admin/roles/1/"
+          }
+        },
+        {
+          "name": "Assign Role(s) to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/admin/users/assign-role/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"user1@example.com\",\n  \"roles\": [\"admin\", \"patients\"],\n  \"effective_date\": \"2025-09-24T09:00:00Z\",\n  \"expiry_date\": null,\n  \"reason\": \"Initial onboarding\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "HL7 Parser",
+      "item": [
+        {
+          "name": "HL7 - Ingest",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/hl7-parser/ingest/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raw_message\": \"MSH|^~\\\\&|SENDING|FAC|RECV|FAC|20230901123045||ADT^A01|123|P|2.5\\nPID|1||12345^^^HOSP^MR||DOE^JOHN||19800101|M\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HL7 - Parse Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/hl7-parser/parse-status/{{message_id}}/"
+          }
+        },
+        {
+          "name": "HL7 - Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/hl7-parser/batch/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\"raw_message\": \"...\"},\n    {\"raw_message\": \"...\"}\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "HL7 - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/hl7-parser/"
+          }
+        },
+        {
+          "name": "HL7 - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/hl7-parser/1/"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Patients - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/?search=john"
+          }
+        },
+        {
+          "name": "Patients - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource_id\": \"pat-001\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"gender\": \"male\",\n  \"birth_date\": \"1990-01-01\",\n  \"identifiers\": [{\"system\": \"MRN\", \"value\": \"12345\"}]\n}"
+            }
+          }
+        },
+        {
+          "name": "Patients - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/{{patient_id}}/"
+          }
+        },
+        {
+          "name": "Patients - Update (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/{{patient_id}}/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"gender\": \"male\",\n  \"birth_date\": \"1990-01-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Patients - Partial Update (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/{{patient_id}}/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"last_name\": \"Doe-Smith\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Patients - Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/{{patient_id}}/"
+          }
+        },
+        {
+          "name": "Patients - Search (Bundle)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/search/?search=john"
+          }
+        },
+        {
+          "name": "Patients - Merge",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/patients/{{patient_id}}/merge/2/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Duplicate\",\n  \"mergeStrategy\": \"keep_latest\",\n  \"fields\": [\"last_name\"],\n  \"auditReason\": \"Admin merge\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Patients - Export",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/patients/{{patient_id}}/export?format={{export_format}}&includeSections=demographics,encounters",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "patients", "{{patient_id}}", "export"],
+              "query": [
+                { "key": "format", "value": "{{export_format}}" },
+                { "key": "includeSections", "value": "demographics,encounters" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Observations",
+      "item": [
+        {
+          "name": "Observations - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/"
+          }
+        },
+        {
+          "name": "Observations - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"code\": \"LOINC:8480-6\",\n  \"status\": \"final\",\n  \"effective_time\": \"2025-09-24T10:00:00Z\",\n  \"value_quantity\": {\"value\": 120, \"unit\": \"mmHg\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Observations - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/{{observation_id}}/"
+          }
+        },
+        {
+          "name": "Observations - Update (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/{{observation_id}}/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"amended\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Observations - Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/{{observation_id}}/"
+          }
+        },
+        {
+          "name": "Observations - Trends (by patient)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/{{patient_id}}/trends?code=LOINC:8480-6&period=P30D"
+          }
+        },
+        {
+          "name": "Observations - Configure Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/observations/alerts/configure/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"code\": \"LOINC:8480-6\",\n  \"high_threshold\": 140,\n  \"low_threshold\": 90,\n  \"channels\": [\"email\"],\n  \"enabled\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Appointments + Waitlist",
+      "item": [
+        {
+          "name": "Appointments - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/appointments/"
+          }
+        },
+        {
+          "name": "Appointments - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/appointments/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"start_time\": \"2025-09-25T09:00:00Z\",\n  \"end_time\": \"2025-09-25T09:30:00Z\",\n  \"status\": \"booked\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Appointments - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/appointments/{{appointment_id}}/"
+          }
+        },
+        {
+          "name": "Appointments - Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/appointments/availability?practitioner={{practitioner}}&date=2025-09-26"
+          }
+        },
+        {
+          "name": "Appointments - Add to Waitlist (detail action)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/appointments/{{appointment_id}}/waitlist/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"pat-001\",\n  \"preferredDates\": [\"2025-09-27\"],\n  \"preferredTimes\": [\"09:00\"],\n  \"priority\": \"routine\",\n  \"notificationPreferences\": {\"email\": true}\n}"
+            }
+          }
+        },
+        {
+          "name": "Waitlist - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/waitlist/"
+          }
+        },
+        {
+          "name": "Waitlist - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/waitlist/1/"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Telemedicine",
+      "item": [
+        {
+          "name": "Sessions - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/sessions/"
+          }
+        },
+        {
+          "name": "Sessions - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/sessions/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointment\": {{appointment_id}},\n  \"status\": \"scheduled\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Consents - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/consents/"
+          }
+        },
+        {
+          "name": "Consents - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/consents/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session\": 1,\n  \"consented\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Metrics - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/metrics/"
+          }
+        },
+        {
+          "name": "Metrics - Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/telemedicine/metrics/1/"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Templates - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/templates/"
+          }
+        },
+        {
+          "name": "Templates - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/templates/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"appt_reminder\",\n  \"channel\": \"email\",\n  \"content\": \"Your appointment is scheduled.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Notifications - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/"
+          }
+        },
+        {
+          "name": "Notifications - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": 1,\n  \"recipient\": \"user1@example.com\",\n  \"context\": {\"patient\": \"pat-001\", \"time\": \"09:00\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Campaigns - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/campaigns/"
+          }
+        },
+        {
+          "name": "Campaigns - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/notifications/campaigns/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": 1,\n  \"name\": \"flu_awareness\",\n  \"criteria\": {\"age_gt\": 60}\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Risk Scores - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/risk-scores/"
+          }
+        },
+        {
+          "name": "Risk Scores - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/risk-scores/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"score\": 0.78,\n  \"model\": \"readmission-v1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Training Jobs - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/training-jobs/"
+          }
+        },
+        {
+          "name": "Training Jobs - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/training-jobs/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"readmission-2025-09\",\n  \"dataset\": \"s3://bucket/dataset.parquet\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Model Versions - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/model-versions/"
+          }
+        },
+        {
+          "name": "Model Versions - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/model-versions/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"training_job\": 1,\n  \"version\": \"1.0.0\",\n  \"metrics\": {\"auc\": 0.91}\n}"
+            }
+          }
+        },
+        {
+          "name": "Personalized Alerts - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/alerts/"
+          }
+        },
+        {
+          "name": "Personalized Alerts - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/analytics/alerts/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"model\": 1,\n  \"score\": 0.85,\n  \"label\": \"High risk\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Audit Events - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/events/"
+          }
+        },
+        {
+          "name": "Audit Events - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/events/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"LOGIN\",\n  \"details\": {\"ip\": \"127.0.0.1\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Audit Exports - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/exports/"
+          }
+        },
+        {
+          "name": "Audit Exports - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/exports/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"range_start\": \"2025-09-01T00:00:00Z\",\n  \"range_end\": \"2025-09-30T23:59:59Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Audit Anomalies - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/anomalies/"
+          }
+        },
+        {
+          "name": "Audit Anomalies - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/audit/anomalies/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"suspicious_login\",\n  \"score\": 0.92,\n  \"meta\": {\"user\": \"user1@example.com\"}\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
